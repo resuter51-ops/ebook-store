@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Robert Suter — eBooks</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6fa; color: #2c3e50; }
+
+  header {
+    background: linear-gradient(135deg, #1a1a2e, #2c3e50);
+    color: white;
+    text-align: center;
+    padding: 40px 20px 30px;
+  }
+  header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px; }
+  header p  { color: rgba(255,255,255,0.7); margin-top: 8px; font-size: 0.95rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1000px;
+    margin: 36px auto;
+    padding: 0 20px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,0.13); }
+
+  .card-cover {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+  }
+  .card-cover-placeholder {
+    width: 100%;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+  }
+
+  .card-body { padding: 18px; }
+  .card-body h2 { font-size: 1rem; font-weight: 700; line-height: 1.35; }
+  .card-body p  { font-size: 0.85rem; color: #666; margin-top: 6px; line-height: 1.5; }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .price { font-size: 1.2rem; font-weight: 900; color: #2c3e50; }
+  .price span { font-size: 0.75rem; color: #999; font-weight: 400; margin-left: 4px; }
+
+  .btn-buy {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-buy:hover { opacity: 0.88; }
+  .btn-buy:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Email modal */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 28px;
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  }
+  .modal h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  .modal p  { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+  .modal input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal input:focus { border-color: #3498db; }
+  .modal .btn-confirm {
+    width: 100%;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal .btn-cancel {
+    width: 100%;
+    background: none;
+    border: none;
+    color: #999;
+    margin-top: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 30px 20px;
+    color: #aaa;
+    font-size: 0.82rem;
+  }
+  footer a { color: #3498db; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 Robert Suter — eBooks</h1>
+  <p>Instant download delivered to your email · PDF format · Read on any device</p>
+</header>
+
+<div class="grid" id="bookGrid"></div>
+
+<!-- Email modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Almost there! 📧</h3>
+    <p>Enter your email and we'll send your download link right after payment.</p>
+    <input type="email" id="emailInput" placeholder="your@email.com" autocomplete="email"/>
+    <button class="btn-confirm" id="btnConfirm">Go to Checkout →</button>
+    <button class="btn-cancel" id="btnCancel">Cancel</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Robert Suter · <a href="https://wordsandwheels.net">wordsandwheels.net</a></p>
+  <p style="margin-top:6px;">Secure checkout powered by Stripe · PDF delivered instantly by email</p>
+</footer>
+
+<script>
+const CHECKOUT_URL = "https://api.base44.com/api/apps/69b1cf645256e83c174a7c51/functions/stripeCheckoutInstant";
+
+// Price IDs from your existing Stripe setup — single book = $2.99
+// We'll use a dynamic price instead of a fixed price ID
+const BOOKS = [
+  {
+    id: "happiness",
+    title: "Happiness Finds Big Man",
+    desc: "A heartwarming story that proves happiness can be found anywhere.",
+    cover: "https://cdn.base44.com/media/69b1cf645256e83c174a7c51/happiness-finds-big-man.png",
+    emoji: "📗",
+    price: "$2.99",
+    amount: 299,
+  },
+  {
+    id: "valley_fair",
+    title: "Just Another Typical Day in Valley Fair",
+    desc: "A vivid tale of life, laughter, and the unexpected.",
+    cover: "https://cdn.base44.com/media/69b1cf645256e83c174a7c51/just-another-typical-day-in-valley-fair.png",
+    emoji: "📘",
+    price: "$2.99",
+    amount: 299,
+  },
+  {
+    id: "salvager_1",
+    title: "The Salvager Book 1: A Sister's Plea",
+    desc: "The first chapter of an action-packed sci-fi adventure series.",
+    cover: "https://cdn.base44.com/media/69b1cf645256e83c174a7c51/TheSalvagerSeriesBook1_cover_corrected.jpg",
+    emoji: "📕",
+    price: "$2.99",
+    amount: 299,
+  },
+  {
+    id: "salvager_2",
+    title: "The Salvager Book 2: The Runaway Daughter",
+    desc: "The saga continues — secrets, sacrifice, and survival.",
+    cover: "https://cdn.base44.com/media/69b1cf645256e83c174a7c51/Bookd2d-2-The-Runaway-Daughter-original.jpg",
+    emoji: "📙",
+    price: "$2.99",
+    amount: 299,
+  },
+  {
+    id: "salvager_3",
+    title: "The Salvager Book 3: The Network",
+    desc: "The thrilling conclusion to The Salvager trilogy.",
+    cover: "https://cdn.base44.com/media/69b1cf645256e83c174a7c51/salvager-book3-the-network.png",
+    emoji: "📒",
+    price: "$2.99",
+    amount: 299,
+  },
+];
+
+// Render cards
+const grid = document.getElementById("bookGrid");
+BOOKS.forEach(book => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <img class="card-cover" src="${book.cover}" alt="${book.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="card-cover-placeholder" style="display:none;background:#f0f4f8;">${book.emoji}</div>
+    <div class="card-body">
+      <h2>${book.title}</h2>
+      <p>${book.desc}</p>
+    </div>
+    <div class="card-footer">
+      <div class="price">${book.price} <span>PDF</span></div>
+      <button class="btn-buy" data-id="${book.id}" data-amount="${book.amount}" data-title="${book.title}">Buy Now</button>
+    </div>
+  `;
+  grid.appendChild(card);
+});
+
+// Modal logic
+let selectedBook = null;
+const modalBg   = document.getElementById("modalBg");
+const emailInput = document.getElementById("emailInput");
+const btnConfirm = document.getElementById("btnConfirm");
+const btnCancel  = document.getElementById("btnCancel");
+
+document.getElementById("bookGrid").addEventListener("click", e => {
+  const btn = e.target.closest(".btn-buy");
+  if (!btn) return;
+  selectedBook = { id: btn.dataset.id, amount: parseInt(btn.dataset.amount), title: btn.dataset.title };
+  emailInput.value = "";
+  modalBg.classList.add("open");
+  setTimeout(() => emailInput.focus(), 100);
+});
+
+btnCancel.addEventListener("click", () => { modalBg.classList.remove("open"); selectedBook = null; });
+modalBg.addEventListener("click", e => { if (e.target === modalBg) { modalBg.classList.remove("open"); selectedBook = null; }});
+
+btnConfirm.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  if (!email || !email.includes("@")) { emailInput.style.borderColor = "red"; return; }
+  emailInput.style.borderColor = "#e0e0e0";
+
+  btnConfirm.disabled = true;
+  btnConfirm.textContent = "Redirecting...";
+
+  try {
+    const res = await fetch(CHECKOUT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        bookId: selectedBook.id,
+        bookTitle: selectedBook.title,
+        amount: selectedBook.amount,
+        isEbook: true,
+        languages: [],
+        isBundle: false,
+        isBusiness: false,
+      }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("Something went wrong. Please try again.");
+      btnConfirm.disabled = false;
+      btnConfirm.textContent = "Go to Checkout →";
+    }
+  } catch (err) {
+    alert("Network error. Please try again.");
+    btnConfirm.disabled = false;
+    btnConfirm.textContent = "Go to Checkout →";
+  }
+});
+
+emailInput.addEventListener("keydown", e => { if (e.key === "Enter") btnConfirm.click(); });
+</script>
+</body>
+</html>
