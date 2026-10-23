@@ -171,8 +171,8 @@ const BOOKS = [
     title: "Happiness Finds Big Man",
     desc: "A gentle giant who has everything the world says matters — yet something is missing. A heartfelt story about what it truly means to find joy, purpose, and belonging.",
     cover: "https://base44.app/api/apps/69b1cf645256e83c174a7c51/files/mp/public/69b1cf645256e83c174a7c51/254fdf8cf_happiness.jpg",
-    price: "$2.99",
-    amount: 399,
+    price: "FREE",
+    freeUrl: "https://bobsuniverse.love/b/q0DKv",
   },
   {
     id: "valley_fair",
@@ -220,7 +220,9 @@ BOOKS.forEach(book => {
     </div>
     <div class="card-footer">
       <div class="price">${book.price} <span>PDF</span></div>
-      <button class="btn-buy" data-id="${book.id}" data-amount="${book.amount}" data-title="${book.title}">Buy Now</button>
+      ${book.freeUrl
+        ? `<a class="btn-buy btn-free" href="${book.freeUrl}" target="_blank" rel="noopener">Get It Free</a>`
+        : `<button class="btn-buy" data-id="${book.id}" data-amount="${book.amount}" data-title="${book.title}">Buy Now</button>`}
     </div>
   `;
   grid.appendChild(card);
@@ -234,7 +236,7 @@ const btnCancel  = document.getElementById("btnCancel");
 
 document.getElementById("bookGrid").addEventListener("click", e => {
   const btn = e.target.closest(".btn-buy");
-  if (!btn) return;
+  if (!btn || btn.classList.contains("btn-free")) return;
   selectedBook = { id: btn.dataset.id, amount: parseInt(btn.dataset.amount), title: btn.dataset.title };
   emailInput.value = "";
   modalBg.classList.add("open");
